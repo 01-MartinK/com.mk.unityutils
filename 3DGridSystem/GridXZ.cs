@@ -35,12 +35,17 @@ public class GridXZ<TGridObject>
         }
     }
 
-    public Vector3 GetWorldPosition(int x, int y)
+	public Vector3 ToWorldPosition(Vector2Int position) 
+	{
+		return new Vector3(position.x, 0, position.y) * cellSize + origin;
+	}
+
+    public Vector3 ToWorldPosition(int x, int y)
     {
         return new Vector3(x, 0, y) * cellSize + origin;
     }
 
-    public Vector3 GetWorldPosition(int x, int y, int z)
+    public Vector3 ToWorldPosition(int x, int y, int z)
     {
         return new Vector3(x, y, z) * cellSize + origin;
     }
@@ -58,12 +63,12 @@ public class GridXZ<TGridObject>
         y = Mathf.FloorToInt((worldPosition - origin).z / cellSize);
     }
 
-    public void ToGridPosition(Vector3 worldPosition, out int x, out int y, out int z)
+    public Vector2Int ToGridPosition(Vector3 worldPosition)
     {
-        x = Mathf.FloorToInt((worldPosition - origin).x / cellSize);
-        y = Mathf.FloorToInt((worldPosition - origin).y / cellSize);
-        z = Mathf.FloorToInt((worldPosition - origin).z / cellSize);
-    }
+        int x = Mathf.FloorToInt((worldPosition - origin).x / cellSize);
+        int y = Mathf.FloorToInt((worldPosition - origin).y / cellSize);
+		return new Vector2Int(x, y);
+	}
 
     public void SetGridValue(int x, int y, TGridObject value)
     {
@@ -81,7 +86,7 @@ public class GridXZ<TGridObject>
         if (OnGridObjectChanged != null) OnGridObjectChanged(this, new OnGridObjectChangedEventArgs { x = x, y = y });
     }
 
-    public TGridObject GetGridValue(int x, int y)
+    public TGridObject GetGridObject(int x, int y)
     {
         if (x >= 0 && y >= 0 && x < width && y < width)
         {
@@ -92,7 +97,7 @@ public class GridXZ<TGridObject>
         }
     }
 
-    public TGridObject GetGridValue(Vector3 worldPosition)
+    public TGridObject GetGridObject(Vector3 worldPosition)
     {
         ToGridPosition(worldPosition, out int x, out int y);
         return gridArray[x, y];
@@ -116,5 +121,32 @@ public class GridXZ<TGridObject>
     public Vector3 GetOrigin()
     {
         return this.origin;
+    }
+	
+	public void DrawGrid(Color color) {
+        Gizmos.color = color;
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                Gizmos.DrawLine(ToWorldPosition(x, y), ToWorldPosition(x, y + 1));
+                Gizmos.DrawLine(ToWorldPosition(x, y), ToWorldPosition(x + 1, y));
+            }
+        }
+
+        Gizmos.DrawLine(ToWorldPosition(0, height), ToWorldPosition(width, height));
+        Gizmos.DrawLine(ToWorldPosition(width, 0), ToWorldPosition(width, height));
+    }
+
+    public void DrawGridValues(Color color) {
+        GUIStyle newStyle = new GUIStyle();
+        newStyle.alignment = TextAnchor.MiddleCenter;
+        newStyle.normal.textColor = color;
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                if (GetGridValue(x, y) != null)
+                    Handles.Label(ToWorldPosition(x, y) + new Vector3(cellSize / 2, 0, cellSize / 2), GetGridValue(x, y).ToString(), newStyle);
+            }
+        }
     }
 }
